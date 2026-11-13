@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(EMPLOYEE)
+  reviews   Review[]
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id          String    @id @default(cuid())
+
+  name        String
+  description String?
+
+  active      Boolean   @default(true)
+
+  deletedAt   DateTime?
+
+  products    Product[]
+
+  createdAt   DateTime  @default(now())
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  name        String
+  description String?
+  brand       String?
+
+  imageUrl String?
+
+  costPrice  Float
+  salePrice  Float
+  offerPrice Float?
+
+  stock    Int @default(0)
+  minStock Int @default(0)
+
+  location String?
+
+  active Boolean @default(true)
+
+  deletedAt DateTime?
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  purchaseItems PurchaseItem[]
+  saleItems     SaleItem[]
+  reviews       Review[]
+  discountPercent Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Provider {
+  id           String  @id @default(cuid())
+  name         String
+  document     String?
+  phone        String?
+  whatsapp     String?
+  email        String?
+  address      String?
+  observations String?
+
+  purchases Purchase[]
+
+  createdAt DateTime @default(now())
+}
+
+model Purchase {
+  id String @id @default(cuid())
+
+  invoice String?
+
+  active Boolean @default(true)
+
+  deletedAt DateTime?
+
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id])
+
+  items PurchaseItem[]
+
+  createdAt DateTime @default(now())
+}
+
+model PurchaseItem {
+  id String @id @default(cuid())
+
+  purchaseId String
+  purchase   Purchase @relation(fields: [purchaseId], references: [id])
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity  Int
+  costPrice Float
+
+  createdAt DateTime @default(now())
+}
+
+model Customer {
+  id String @id @default(cuid())
+
+  name         String
+  document     String?
+  phone        String?
+  whatsapp     String?
+  email        String?
+  address      String?
+  observations String?
+
+  sales Sale[]
+
+  createdAt DateTime @default(now())
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CARD
+  CREDIT
+  MIXED
+}
+
+model Sale {
+  id String @id @default(cuid())
+
+  invoice String @unique
+
+  active Boolean @default(true)
+  deletedAt DateTime?
+
+  paymentMethod PaymentMethod @default(CASH)
+
+  subtotal Float @default(0)
+  discount Float @default(0)
+  total Float @default(0)
+
+  cashAmount Float @default(0)
+  transferAmount Float @default(0)
+  cardAmount Float @default(0)
+  creditAmount Float @default(0)
+
+  notes String?
+
+  customerId String
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  items SaleItem[]
+
+  accountsReceivable AccountReceivable?
+
+  createdAt DateTime @default(now())
+}
+
+model SaleItem {
+  id String @id @default(cuid())
+
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id])
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity Int
+
+  costPrice Float
+  salePrice Float
+
+  createdAt DateTime @default(now())
+}
+
+enum AccountStatus {
+  PENDING
+  PAID
+}
+
+model AccountReceivable {
+  id String @id @default(cuid())
+
+  active Boolean @default(true)
+
+  deletedAt DateTime?
+
+  saleId String @unique
+  sale   Sale   @relation(fields: [saleId], references: [id])
+
+  totalAmount   Float
+  paidAmount    Float @default(0)
+  pendingAmount Float
+
+  dueDate DateTime?
+
+  status AccountStatus @default(PENDING)
+
+  payments Payment[]
+
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id String @id @default(cuid())
+
+  accountId String
+  account   AccountReceivable @relation(fields: [accountId], references: [id])
+
+  amount Float
+
+  notes String?
+
+  createdAt DateTime @default(now())
+}
+
+model Expense {
+  id String @id @default(cuid())
+
+  type        String
+  description String?
+
+  amount Float
+
+  receipt String?
+
+  createdAt DateTime @default(now())
+}
+
+/// Reviews belong to existing ERP users and products. CHECK enforced in PostgreSQL migration.
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  userId    String
+  productId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+
+  @@index([productId], map: "reviews_product_id_idx")
+  @@map("reviews")
+}

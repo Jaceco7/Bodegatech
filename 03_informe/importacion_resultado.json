@@ -1,0 +1,23 @@
+{
+  "input": 6,
+  "accepted": 0,
+  "rejected": 3,
+  "duplicates": 3,
+  "errors": [
+    {
+      "line": 5,
+      "review_id": "csv_m2_004",
+      "reason": "Campos incompletos, rating fuera de 0–5 o comentario demasiado largo"
+    },
+    {
+      "line": 6,
+      "review_id": "csv_m2_005",
+      "reason": "Campos incompletos, rating fuera de 0–5 o comentario demasiado largo"
+    },
+    {
+      "line": 7,
+      "review_id": "csv_m2_006",
+      "reason": "Base de datos: reviews_userId_fkey"
+    }
+  ]
+}

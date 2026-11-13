@@ -1,0 +1,7 @@
+review_id,user_id,product_id,rating,comment
+csv_m2_001,user_m2_001,prod_m2_001,5,Excelente laptop
+csv_m2_002,user_m2_002,prod_m2_001,3,Buen rendimiento
+csv_m2_003,user_m2_001,prod_m2_002,4,Equipo recomendado
+csv_m2_004,user_m2_001,prod_m2_001,-2,Rating negativo
+csv_m2_005,user_m2_002,prod_m2_002,7,Rating mayor al maximo
+csv_m2_006,usuario_inexistente,prod_m2_003,4,Usuario inexistente
