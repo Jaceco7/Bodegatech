@@ -5,9 +5,15 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-// Redirige al módulo de reseñas mostrando un mensaje.
-function go(message: string): never {
-  redirect(`/resenas?mensaje=${encodeURIComponent(message)}`);
+type MessageType = "success" | "error";
+
+function go(message: string, type: MessageType): never {
+  const params = new URLSearchParams({
+    mensaje: message,
+    tipo: type,
+  });
+
+  redirect(`/resenas?${params.toString()}`);
 }
 
 // ==========================================
@@ -24,7 +30,6 @@ export async function addReview(form: FormData) {
 
   const comment = String(form.get("comment") ?? "").trim();
 
-  // Validar los campos básicos.
   if (
     !userId ||
     !productId ||
@@ -34,15 +39,14 @@ export async function addReview(form: FormData) {
     comment.length > 1000
   ) {
     go(
-      "Revisa los campos del formulario. " +
-      "Selecciona un usuario, un producto y una calificación válida."
+      "Revisa los campos del formulario. Selecciona un usuario, un producto y una calificación válida.",
+      "error"
     );
   }
 
-  // IMPORTANTE PARA EL MOMENTO 2:
-  // No bloqueamos aquí ratings negativos o mayores que 5.
-  // Permitimos que PostgreSQL los reciba para demostrar
-  // que la restricción CHECK protege la base de datos.
+  // Se conserva la prueba académica del CHECK:
+  // los ratings -1 y 6 llegan a PostgreSQL para
+  // demostrar que la base de datos los rechaza.
 
   try {
     await prisma.review.create({
@@ -56,39 +60,33 @@ export async function addReview(form: FormData) {
   } catch (error) {
     console.error("Error al registrar la reseña:", error);
 
-    // Mensaje específico para calificaciones fuera de rango.
     if (rating < 0 || rating > 5) {
       go(
-        "No se pudo registrar la reseña. " +
-        "La calificación debe estar entre 0 y 5. " +
-        "La base de datos rechazó el valor ingresado."
+        "La calificación debe estar entre 0 y 5. No se pudo registrar la reseña.",
+        "error"
       );
     }
 
-    // Mensaje para otros errores de la base de datos.
     go(
-      "No fue posible guardar la reseña. " +
-      "Verifica que el usuario y el producto seleccionados existan."
+      "No fue posible guardar la reseña. Verifica que el usuario y el producto existan.",
+      "error"
     );
   }
 
-  // Se ejecuta únicamente si la reseña se guardó.
   revalidatePath("/resenas");
 
-  go("¡Reseña registrada correctamente!");
+  go("¡Reseña registrada correctamente!", "success");
 }
 
 // ==========================================
-// 3. ACTUALIZAR DESCUENTO DEL PRODUCTO
+// 3. ACTUALIZAR DESCUENTO
 // ==========================================
 
 export async function updateDiscount(form: FormData) {
   const productId = String(form.get("productId") ?? "").trim();
-
   const discountInput = form.get("discountPercent");
   const discountPercent = Number(discountInput);
 
-  // Validaciones básicas.
   if (
     !productId ||
     discountInput === null ||
@@ -96,38 +94,33 @@ export async function updateDiscount(form: FormData) {
     !Number.isInteger(discountPercent)
   ) {
     go(
-      "No se pudo actualizar el descuento. " +
-      "Selecciona un producto e ingresa un porcentaje válido."
+      "Selecciona un producto e ingresa un porcentaje válido.",
+      "error"
     );
   }
 
   try {
     await prisma.product.update({
-      where: {
-        id: productId,
-      },
-      data: {
-        discountPercent,
-      },
+      where: { id: productId },
+      data: { discountPercent },
     });
   } catch (error) {
     console.error("Error al actualizar el descuento:", error);
 
     if (discountPercent < 0 || discountPercent > 100) {
       go(
-        "No se pudo actualizar el descuento. " +
-        "El porcentaje debe estar entre 0% y 100%."
+        "El descuento debe estar entre 0% y 100%.",
+        "error"
       );
     }
 
     go(
-      "No fue posible actualizar el descuento. " +
-      "Verifica que el producto seleccionado exista."
+      "No fue posible actualizar el descuento. Verifica que el producto exista.",
+      "error"
     );
   }
 
-  // Actualizar los datos mostrados en la página.
   revalidatePath("/resenas");
 
-  go("¡Descuento actualizado correctamente!");
+  go("¡Descuento actualizado correctamente!", "success");
 }

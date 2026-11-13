@@ -1,10 +1,18 @@
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { addReview, updateDiscount } from "./actions";
+import MessageModal from "./MessageModal";
 
-type SearchProps = {searchParams: Promise<{mensaje?:string; categoria?:string}>};
-export default async function ReviewsPage({searchParams}:SearchProps) {
-  const {mensaje, categoria} = await searchParams;
+type SearchProps = {
+  searchParams: Promise<{
+    mensaje?: string;
+    tipo?: "success" | "error";
+    categoria?: string;
+  }>;
+};
+
+export default async function ReviewsPage({ searchParams }: SearchProps) {
+  const { mensaje, tipo, categoria } = await searchParams;
   const [users,categories,products,reviews] = await Promise.all([
     prisma.user.findMany({select:{id:true,name:true},orderBy:{name:"asc"}}),
     prisma.category.findMany({where:{active:true},orderBy:{name:"asc"}}),
@@ -22,7 +30,7 @@ export default async function ReviewsPage({searchParams}:SearchProps) {
   return <div className="space-y-8 max-w-6xl mx-auto">
     <header><h1 className="text-3xl font-bold">Reseñas y calidad de datos · Momento 2</h1>
     <p className="text-zinc-400 mt-2">Pruebas conectadas directamente a PostgreSQL. Los rechazos se comprueban con restricciones de la base.</p></header>
-    {mensaje && <div role="status" className="p-4 rounded bg-blue-950 border border-blue-700">{mensaje}</div>}
+    <MessageModal mensaje={mensaje} tipo={tipo} />
     <div className="grid md:grid-cols-2 gap-5">
       <section className="bg-zinc-900 p-5 rounded-xl space-y-3"><h2 className="text-xl font-semibold">1. Registrar reseña / 4. Probar rechazo</h2>
         <form action={addReview} className="space-y-3">
